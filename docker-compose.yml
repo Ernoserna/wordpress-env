@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  db:      #database engine
+    image: mysql
+    volumes:   # persistent db local data configuration
+      - ./db:/var/lib/mysql:delegated
+    ports:
+      - "3306"
+    environment:  # db settings
+      MYSQL_ROOT_PASSWORD: securepassw
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: mysqladmin
+      MYSQL_PASSWORD: mysqlpasswd
+  wordpress: #cms
+    depends_on:
+      - db
+    image: wordpress
+    volumes:    # persistent wp local data configuration
+      - .:/var/www/html/wp-content/themes/testing:delegated
+      - ./plugins:/var/www/html/wp-content/plugins
+      - ./uploads:/var/www/html/wp-content/uploads
+      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    ports:
+      - "80:80"
+    environment:       # our local dev environment settings
+      WORDPRESS_DEBUG: 1
+      DEVELOPMENT: 1   # docker wp config settings
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: mysqladmin
+      WORDPRESS_DB_PASSWORD: mysqlpasswd
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_CONFIG_EXTRA: |
+        /* Development parameters */
+        define('WP_CACHE', false);
+        define('ENVIRONMENT', 'local');
+        define('WP_DEBUG', true);       
+  phpmyadmin:  #database web client
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    ports: 
+      - 8080:80 
+    environment:  # our local dev environment settings
+      PMA_HOST: db:3306   
+      MYSQL_ROOT_PASSWORD: securepassw
+      UPLOAD_LIMIT: 10M
